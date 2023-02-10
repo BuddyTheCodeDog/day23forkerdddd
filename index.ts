@@ -1,4 +1,5 @@
 import express from "express";
+import Message from "./message";
 import type User from "./user";
 
 // users is my in-memory array im PRETENDING is a database, that stores users.
@@ -6,40 +7,94 @@ import type User from "./user";
 // not a real database yet.
 // but now i can PUSH to it, and GET elements OUT of it. so it pretends to be a database.
 const users: User[] = [];
+const messages: Message[] = [];
+let messageId: number = 0;
 const app = express();
 app.use(express.json());
 
-app.get("/user/:name", function (req, res) {
-  // now, i want to the user to provide me a NAME. and i will try to FIND that user by name in my
-  // "database", the users array.
+
+
+app.get("/", function (req, res){
+  res.send("Hello World");
+})
+
+app.get("/user/:name", function (req, res){
   const user = users.find((u) => u.name === req.params.name);
   if (user) {
     res.send(user);
   } else {
     res.send({});
   }
+
 });
 
-// POST requests send data to the backend to be saved. this is semantic route naming. POST.
-// for this route, we want to check the `req` object for a users name, isadmin, and roles. then create a new user.
-// the user can be fetched by name in the GET route above.
-// we want to send in a JSON object, which means Javascript Object Notation, which is really long stupid name
-// for a javascript object. so like
-// {name: "Horsey", isAdmin: false, roles: ["kekman"]}
-app.post("/user", function (req, res) {
-  // req.body is our incoming javascript object, with the user information that the person calling this route
-  // wants to save.
+app.post("/user", function (req, res){
+
+
+  console.log(req.body);
   const user: User = {
     name: req.body.name,
     isAdmin: req.body.isAdmin,
     roles: req.body.roles,
+    createdAt: new Date().toLocaleString('en-US', {
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric'
+    })
+
+  };
+  console.log("user", user);
+
+  users.push(user);
+  res.send(user);
+
+});
+
+app.post("/messages", function (req, res){
+  const message: Message = {
+    userName: req.body.userName,
+    messageText: req.body.messageText,
+    keks: req.body.keks,
+    messageId: ++messageId,
   };
 
-  // on POSTING the data in req.body, and saving it as a user, i PUSH it to my users array. now, on my GET route, i can
-  // get it out out of the "database" of the users array!
-  users.push(user);
+  messages.push(message);
+  res.send(message);
 
-  res.send(user);
 });
+
+app.put("/message/:id", function (req, res) {
+  
+  const messageId = Number(req.params.id);
+  const newMessage = req.body.newMessage;
+
+  // Find the message by its ID
+  const messageIndex = messages.findIndex(message => message.messageId == messageId);
+  console.log(messageIndex);
+
+
+
+  // Update the message text
+  messages[messageIndex].messageText = newMessage;
+
+  // Return the updated message
+  res.send(messages[messageIndex]);
+});
+
+app.get("/messages", function (req, res){
+  const allMessages = messages;
+  
+})
+
+app.get("/messages/:name", function (req, res){
+  const userName = req.params.name;
+  console.log(messages);
+  
+
+  const userMessages = messages.filter(message => message.userName === userName);
+  res.send(userMessages);
+})
+
+
 
 app.listen(3001);
